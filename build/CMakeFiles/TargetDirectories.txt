@@ -1,3 +1,0 @@
-/home/runner/work/BPLUS_SQL/BPLUS_SQL/build/CMakeFiles/main.dir
-/home/runner/work/BPLUS_SQL/BPLUS_SQL/build/CMakeFiles/edit_cache.dir
-/home/runner/work/BPLUS_SQL/BPLUS_SQL/build/CMakeFiles/rebuild_cache.dir
