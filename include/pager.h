@@ -7,7 +7,6 @@
 #include <cstring>
 #include <vector>
 #include <cstdint>
-#include <iostream>
 
 namespace bplus_sql {
 

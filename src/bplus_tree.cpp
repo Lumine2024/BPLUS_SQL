@@ -108,8 +108,8 @@ size_t BPlusTree::splitLeaf(size_t leafPageId, int key) {
     size_t newLeafPageId = allocatePage();
     BPlusNode* newLeaf = createNode(true);
     
-    // Create temporary array with all keys including new one
-    int allKeys[MAX_KEYS + 1];
+    // Create temporary array with all keys including new one (use dynamic allocation to avoid large stack allocation)
+    std::vector<int> allKeys(MAX_KEYS + 1);
     int insertPos = findKeyIndex(oldLeaf, key);
     
     // Copy keys before insertion point

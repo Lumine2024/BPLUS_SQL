@@ -1,0 +1,3 @@
+/home/runner/work/BPLUS_SQL/BPLUS_SQL/_codeql_build_dir/CMakeFiles/main.dir
+/home/runner/work/BPLUS_SQL/BPLUS_SQL/_codeql_build_dir/CMakeFiles/edit_cache.dir
+/home/runner/work/BPLUS_SQL/BPLUS_SQL/_codeql_build_dir/CMakeFiles/rebuild_cache.dir
