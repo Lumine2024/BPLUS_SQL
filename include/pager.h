@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <stdexcept>
+#include <vector>
 
 namespace bplus_sql {
 
@@ -53,7 +54,7 @@ public:
         // Get current file size
         m_file.seekg(0, std::ios::end);
         std::streampos endPos = m_file.tellg();
-        size_t curSize = (endPos >= 0) ? static_cast<size_t>(endPos) : 0;
+        size_t curSize = (endPos != std::streampos(-1)) ? static_cast<size_t>(endPos) : 0;
         
         if (curSize >= need) {
             m_file.clear(); // Clear any EOF flags
@@ -65,12 +66,12 @@ public:
         m_file.seekp(0, std::ios::end);
         
         size_t remaining = need - curSize;
-        char zeroBuf[PAGE_SIZE];
-        std::memset(zeroBuf, 0, PAGE_SIZE);
+        // Use heap allocation for the buffer to avoid stack overflow
+        std::vector<char> zeroBuf(PAGE_SIZE, 0);
         
         while (remaining > 0) {
             size_t toWrite = (remaining > PAGE_SIZE) ? PAGE_SIZE : remaining;
-            m_file.write(zeroBuf, toWrite);
+            m_file.write(zeroBuf.data(), toWrite);
             remaining -= toWrite;
         }
         
@@ -88,16 +89,17 @@ public:
         m_file.seekg(offset, std::ios::beg);
         
         if (!m_file.good()) {
+            // Failed to seek, zero out the node and return
             std::memset(&node, 0, sizeof(node));
             return *this;
         }
         
-        // Read the page into a buffer
-        char pageBuf[PAGE_SIZE];
-        m_file.read(pageBuf, PAGE_SIZE);
+        // Read the page into a buffer (use heap allocation to avoid stack overflow)
+        std::vector<char> pageBuf(PAGE_SIZE);
+        m_file.read(pageBuf.data(), PAGE_SIZE);
         
         // Copy node data from buffer
-        std::memcpy(&node, pageBuf, sizeof(node));
+        std::memcpy(&node, pageBuf.data(), sizeof(node));
         
         return *this;
     }
@@ -106,12 +108,11 @@ public:
         // Ensure the page exists
         ensurePageExists(pageId);
         
-        // Prepare page buffer with zeros
-        char pageBuf[PAGE_SIZE];
-        std::memset(pageBuf, 0, PAGE_SIZE);
+        // Prepare page buffer with zeros (use heap allocation to avoid stack overflow)
+        std::vector<char> pageBuf(PAGE_SIZE, 0);
         
         // Copy node data to buffer
-        std::memcpy(pageBuf, &node, sizeof(node));
+        std::memcpy(pageBuf.data(), &node, sizeof(node));
         
         // Seek to the page position
         size_t offset = pageId * PAGE_SIZE;
@@ -119,7 +120,7 @@ public:
         m_file.seekp(offset, std::ios::beg);
         
         // Write the page
-        m_file.write(pageBuf, PAGE_SIZE);
+        m_file.write(pageBuf.data(), PAGE_SIZE);
         m_file.flush();
         
         return *this;
