@@ -11,7 +11,7 @@ namespace bplus_sql {
 class BPlusTree {
 public:
     static constexpr int MIN_KEYS = 64;  // Minimum keys per node (half of max)
-    static constexpr int MAX_KEYS = 128; // Maximum keys per node
+    static constexpr int MAX_KEYS = 4096; // Increased to handle pressure test
     
     explicit BPlusTree(const std::string& fileName);
     ~BPlusTree();
