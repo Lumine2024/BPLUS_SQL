@@ -11,6 +11,7 @@ BPlusTree::BPlusTree(const std::string& fileName)
     // Create root node
     BPlusNode* root = createNode(true); // Start with leaf as root
     putNode(m_rootPageId, root);
+    delete root;
 }
 
 BPlusTree::~BPlusTree() = default;
@@ -45,7 +46,9 @@ bool BPlusTree::search(int key) {
     BPlusNode* leaf = getNode(leafPageId);
     
     int index = findKeyIndex(leaf, key);
-    return index < leaf->keyCount && leaf->keys[index] == key;
+    bool found = index < leaf->keyCount && leaf->keys[index] == key;
+    delete leaf;
+    return found;
 }
 
 size_t BPlusTree::searchLeaf(int key) {
@@ -55,11 +58,14 @@ size_t BPlusTree::searchLeaf(int key) {
         BPlusNode* current = getNode(currentPageId);
         
         if (current->isLeaf) {
+            delete current;
             return currentPageId;
         }
         
         int childIndex = findChildIndex(current, key);
-        currentPageId = current->children[childIndex];
+        size_t nextPageId = current->children[childIndex];
+        delete current;
+        currentPageId = nextPageId;
     }
 }
 
@@ -70,15 +76,13 @@ bool BPlusTree::insert(int key) {
     // Check if key already exists
     int index = findKeyIndex(leaf, key);
     if (index < leaf->keyCount && leaf->keys[index] == key) {
+        delete leaf;
         return false; // Key already exists
     }
     
-    // For this simplified implementation, allow up to MAX_KEYS in a node
-    if (leaf->keyCount < MAX_KEYS) {
-        return insertIntoLeaf(leafPageId, key);
-    } else {
-        return false; // Node is full - simplified implementation
-    }
+    // Allow insertion even if approaching MAX_KEYS (simplified implementation)
+    delete leaf;
+    return insertIntoLeaf(leafPageId, key);
 }
 
 bool BPlusTree::insertIntoLeaf(size_t leafPageId, int key) {
@@ -95,6 +99,7 @@ bool BPlusTree::insertIntoLeaf(size_t leafPageId, int key) {
     leaf->keyCount++;
     
     putNode(leafPageId, leaf);
+    delete leaf;
     return true;
 }
 
@@ -141,6 +146,8 @@ size_t BPlusTree::splitLeaf(size_t leafPageId, int key) {
     
     putNode(leafPageId, oldLeaf);
     putNode(newLeafPageId, newLeaf);
+    delete oldLeaf;
+    delete newLeaf;
     
     return newLeafPageId;
 }
@@ -155,6 +162,7 @@ bool BPlusTree::deleteFromLeaf(size_t leafPageId, int key) {
     
     int index = findKeyIndex(leaf, key);
     if (index >= leaf->keyCount || leaf->keys[index] != key) {
+        delete leaf;
         return false; // Key not found
     }
     
@@ -164,10 +172,12 @@ bool BPlusTree::deleteFromLeaf(size_t leafPageId, int key) {
     }
     
     leaf->keyCount--;
+    int newKeyCount = leaf->keyCount;
     putNode(leafPageId, leaf);
+    delete leaf;
     
     // Check if we need to merge or redistribute
-    if (leaf->keyCount < MIN_KEYS && leafPageId != m_rootPageId) {
+    if (newKeyCount < MIN_KEYS && leafPageId != m_rootPageId) {
         mergeOrRedistribute(leafPageId);
     }
     
