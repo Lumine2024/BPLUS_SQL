@@ -5,110 +5,131 @@
 #include <string>
 #include <fstream>
 #include <cstring>
-#include <vector>
 #include <cstdint>
+#include <filesystem>
+#include <stdexcept>
+#include <vector>
 
 namespace bplus_sql {
 
 class Pager {
 public:
-    explicit Pager(const std::string &) {}
-    Pager &readPage(unsigned pageId, BPlusNode &node) {
-        while(nodes.size() <= pageId) {
-            BPlusNode newNode{};
-            std::memset(&newNode, 0, sizeof(BPlusNode));
-            nodes.push_back(newNode);
+    explicit Pager(const std::string &fileName) : m_fileName(fileName) {
+        // Ensure the directory exists
+        std::filesystem::path filePath(fileName);
+        if (filePath.has_parent_path()) {
+            std::filesystem::create_directories(filePath.parent_path());
         }
-        std::memcpy(&node, &nodes[pageId], sizeof(BPlusNode));
+        
+        // Try to open existing file first
+        m_file.open(fileName, std::ios::in | std::ios::out | std::ios::binary);
+        if (!m_file.is_open()) {
+            // File doesn't exist, create it
+            m_file.open(fileName, std::ios::out | std::ios::binary | std::ios::trunc);
+            if (!m_file.is_open()) {
+                throw std::runtime_error("Failed to create file: " + fileName);
+            }
+            m_file.close();
+            // Now open for reading and writing
+            m_file.open(fileName, std::ios::in | std::ios::out | std::ios::binary);
+            if (!m_file.is_open()) {
+                throw std::runtime_error("Failed to open file: " + fileName);
+            }
+        }
+    }
+
+    ~Pager() {
+        if (m_file.is_open()) {
+            m_file.flush();
+            m_file.close();
+        }
+    }
+
+    static constexpr size_t PAGE_SIZE = 1ull << 12;
+
+    void ensurePageExists(size_t pageId) {
+        // Ensure the file has at least (pageId+1)*PAGE_SIZE bytes
+        size_t need = (pageId + 1) * PAGE_SIZE;
+        
+        // Get current file size
+        m_file.seekg(0, std::ios::end);
+        std::streampos endPos = m_file.tellg();
+        size_t curSize = (endPos != std::streampos(-1)) ? static_cast<size_t>(endPos) : 0;
+        
+        if (curSize >= need) {
+            m_file.clear(); // Clear any EOF flags
+            return;
+        }
+        
+        // Append zeros to expand the file
+        m_file.clear();
+        m_file.seekp(0, std::ios::end);
+        
+        size_t remaining = need - curSize;
+        // Use heap allocation for the buffer to avoid stack overflow
+        std::vector<char> zeroBuf(PAGE_SIZE, 0);
+        
+        while (remaining > 0) {
+            size_t toWrite = (remaining > PAGE_SIZE) ? PAGE_SIZE : remaining;
+            m_file.write(zeroBuf.data(), toWrite);
+            remaining -= toWrite;
+        }
+        
+        m_file.flush();
+        m_file.clear(); // Clear any flags
+    }
+
+    Pager &readPage(size_t pageId, BPlusNode &node) {
+        // Ensure the page exists
+        ensurePageExists(pageId);
+        
+        // Seek to the page position
+        size_t offset = pageId * PAGE_SIZE;
+        m_file.clear();
+        m_file.seekg(offset, std::ios::beg);
+        
+        if (!m_file.good()) {
+            // Failed to seek, zero out the node and return
+            std::memset(&node, 0, sizeof(node));
+            return *this;
+        }
+        
+        // Read the page into a buffer (use heap allocation to avoid stack overflow)
+        std::vector<char> pageBuf(PAGE_SIZE);
+        m_file.read(pageBuf.data(), PAGE_SIZE);
+        
+        // Copy node data from buffer
+        std::memcpy(&node, pageBuf.data(), sizeof(node));
+        
         return *this;
     }
-    Pager &writePage(unsigned pageId, BPlusNode &node) {
-        while(nodes.size() <= pageId) {
-            BPlusNode newNode{};
-            std::memset(&newNode, 0, sizeof(BPlusNode));
-            nodes.push_back(newNode);
-        }
-        std::memcpy(&nodes[pageId], &node, sizeof(BPlusNode));
+
+    Pager &writePage(size_t pageId, BPlusNode &node) {
+        // Ensure the page exists
+        ensurePageExists(pageId);
+        
+        // Prepare page buffer with zeros (use heap allocation to avoid stack overflow)
+        std::vector<char> pageBuf(PAGE_SIZE, 0);
+        
+        // Copy node data to buffer
+        std::memcpy(pageBuf.data(), &node, sizeof(node));
+        
+        // Seek to the page position
+        size_t offset = pageId * PAGE_SIZE;
+        m_file.clear();
+        m_file.seekp(offset, std::ios::beg);
+        
+        // Write the page
+        m_file.write(pageBuf.data(), PAGE_SIZE);
+        m_file.flush();
+        
         return *this;
     }
+    
 private:
-    std::vector<BPlusNode> nodes;
+    std::string m_fileName;
+    std::fstream m_file;
 };
-
-// class Pager {
-// public:
-//     explicit Pager(const std::string &fileName) {
-//         m_file.open(fileName, std::ios::in | std::ios::out | std::ios::binary);
-//         if (!m_file.is_open()) {
-//             // File doesn't exist, create it
-//             m_file.clear();
-//             m_file.open(fileName, std::ios::out | std::ios::binary);
-//             m_file.close();
-//             m_file.open(fileName, std::ios::in | std::ios::out | std::ios::binary);
-//         }
-//     }
-
-//     static constexpr size_t PAGE_SIZE = 1ull << 12;
-
-//     void ensurePageExists(size_t pageId) {
-//         // Ensure the file has at least (pageId+1)*PAGE_SIZE bytes. If not, append zero bytes.
-//         std::uint64_t need = (std::uint64_t)(pageId + 1) * PAGE_SIZE;
-//         m_file.clear();
-//         m_file.seekg(0, std::ios::end);
-//         std::streamoff curOff = m_file.tellg();
-//         std::uint64_t curSize = 0;
-//         if (curOff != static_cast<std::streamoff>(-1)) curSize = static_cast<std::uint64_t>(curOff);
-//         if (curSize >= need) return;
-//         // append zeros in PAGE_SIZE chunks
-//         m_file.clear();
-//         m_file.seekp(0, std::ios::end);
-//         const size_t CHUNK = PAGE_SIZE;
-//         std::vector<char> zeros(CHUNK, 0);
-//         std::uint64_t remaining = need - curSize;
-//         while (remaining > 0) {
-//             size_t toWrite = remaining > CHUNK ? CHUNK : static_cast<size_t>(remaining);
-//             m_file.write(zeros.data(), static_cast<std::streamsize>(toWrite));
-//             remaining -= toWrite;
-//         }
-//         m_file.flush();
-//         // clear flags to allow subsequent reads/writes
-//         m_file.clear();
-//     }
-
-//     Pager &readPage(size_t pageId, BPlusNode &node) {
-//         // Read a whole page. If the page doesn't exist or is short, zero-fill the page
-//         // ensure the page exists (file expanded and zero-filled if needed)
-//         ensurePageExists(pageId);
-//         std::vector<char> pageBuf(PAGE_SIZE);
-//         std::streampos off = static_cast<std::streampos>(pageId) * static_cast<std::streamoff>(PAGE_SIZE);
-//         m_file.clear(); // clear any eof/fail bits before seeking
-//         m_file.seekg(off, std::ios::beg);
-//         if (!m_file.good()) {
-//             std::memset(&node, 0, sizeof(node));
-//             return *this;
-//         }
-//         m_file.read(pageBuf.data(), static_cast<std::streamsize>(PAGE_SIZE));
-//         // Copy node-sized data from page into node (node is <= PAGE_SIZE as asserted)
-//         std::memcpy(&node, pageBuf.data(), sizeof(node));
-//         return *this;
-//     }
-
-//     Pager &writePage(size_t pageId, const BPlusNode &node) {
-//         // Ensure file is large enough, zero-initializing intermediate pages as needed
-//         ensurePageExists(pageId);
-//         std::vector<char> pageBuf(PAGE_SIZE);
-//         std::memset(pageBuf.data(), 0, PAGE_SIZE);
-//         std::memcpy(pageBuf.data(), &node, sizeof(node));
-//         std::streampos off = static_cast<std::streampos>(pageId) * static_cast<std::streamoff>(PAGE_SIZE);
-//         m_file.clear();
-//         m_file.seekp(off, std::ios::beg);
-//         m_file.write(pageBuf.data(), static_cast<std::streamsize>(PAGE_SIZE));
-//         m_file.flush();
-//         return *this;
-//     }
-// private:
-//     std::fstream m_file;
-// };
 
 }
 
