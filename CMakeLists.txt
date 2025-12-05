@@ -8,3 +8,6 @@ target_include_directories(pressure_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/inc
 
 add_executable(always_insert tests/always_insert.cpp)
 target_include_directories(always_insert PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+add_executable(test_existing_tree tests/test_existing_tree.cpp)
+target_include_directories(test_existing_tree PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
