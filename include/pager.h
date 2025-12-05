@@ -73,8 +73,8 @@ public:
     static constexpr size_t PAGE_SIZE = 1ull << 12;
 
     void ensurePageExists(size_t pageId) {
-        // Ensure the file has at least (pageId+1)*PAGE_SIZE bytes
-        size_t need = (pageId + 1) * PAGE_SIZE;
+        // Ensure the file has at least metadata page + (pageId+1)*PAGE_SIZE bytes
+        size_t need = PAGE_SIZE + (pageId + 1) * PAGE_SIZE; // First page is metadata
         
         // Get current file size
         m_file.seekg(0, std::ios::end);
@@ -108,8 +108,8 @@ public:
         // Ensure the page exists
         ensurePageExists(pageId);
         
-        // Seek to the page position
-        size_t offset = pageId * PAGE_SIZE;
+        // Seek to the page position (offset by metadata size)
+        size_t offset = PAGE_SIZE + pageId * PAGE_SIZE; // First page is metadata
         m_file.clear();
         m_file.seekg(offset, std::ios::beg);
         
@@ -139,8 +139,8 @@ public:
         // Copy node data to buffer
         std::memcpy(pageBuf.data(), &node, sizeof(node));
         
-        // Seek to the page position
-        size_t offset = pageId * PAGE_SIZE;
+        // Seek to the page position (offset by metadata size)
+        size_t offset = PAGE_SIZE + pageId * PAGE_SIZE; // First page is metadata
         m_file.clear();
         m_file.seekp(offset, std::ios::beg);
         
@@ -149,6 +149,47 @@ public:
         m_file.flush();
         
         return *this;
+    }
+    
+    // Metadata operations - store at the beginning of file (before first page)
+    template<typename T>
+    void writeMetadata(const T& metadata) {
+        static_assert(sizeof(T) <= PAGE_SIZE, "Metadata must fit in one page");
+        
+        // Seek to the beginning of file
+        m_file.clear();
+        m_file.seekp(0, std::ios::beg);
+        
+        // Write metadata
+        m_file.write(reinterpret_cast<const char*>(&metadata), sizeof(T));
+        m_file.flush();
+    }
+    
+    template<typename T>
+    void readMetadata(T& metadata) {
+        static_assert(sizeof(T) <= PAGE_SIZE, "Metadata must fit in one page");
+        
+        // Seek to the beginning of file
+        m_file.clear();
+        m_file.seekg(0, std::ios::beg);
+        
+        // Read metadata
+        m_file.read(reinterpret_cast<char*>(&metadata), sizeof(T));
+    }
+    
+    bool fileExists() const {
+        return std::filesystem::exists(m_fileName);
+    }
+    
+    size_t getFileSize() {
+        if (!fileExists()) return 0;
+        
+        m_file.clear();
+        m_file.seekg(0, std::ios::end);
+        std::streampos endPos = m_file.tellg();
+        m_file.clear();
+        
+        return (endPos != std::streampos(-1)) ? static_cast<size_t>(endPos) : 0;
     }
     
 private:
