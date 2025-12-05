@@ -3,9 +3,8 @@ project(bplus_sql)
 
 set(CMAKE_CXX_STANDARD 23)
 
-add_executable(main src/main.cpp src/lru.cpp src/bplus_tree.cpp)
-target_include_directories(main PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+add_executable(pressure_test tests/pressure_test.cpp)
+target_include_directories(pressure_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-# Test for heap corruption fix
-add_executable(test_heap_corruption test_heap_corruption.cpp src/lru.cpp src/bplus_tree.cpp)
-target_include_directories(test_heap_corruption PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+add_executable(always_insert tests/always_insert.cpp)
+target_include_directories(always_insert PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)

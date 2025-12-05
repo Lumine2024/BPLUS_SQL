@@ -12,6 +12,31 @@
 
 namespace bplus_sql {
 
+//class Pager {
+//public:
+//    explicit Pager(const std::string &) {}
+//    Pager &readPage(unsigned pageId, BPlusNode &node) {
+//        while(nodes.size() <= pageId) {
+//            BPlusNode newNode{};
+//            std::memset(&newNode, 0, sizeof(BPlusNode));
+//            nodes.push_back(newNode);
+//        }
+//        std::memcpy(&node, &nodes[pageId], sizeof(BPlusNode));
+//        return *this;
+//    }
+//    Pager &writePage(unsigned pageId, BPlusNode &node) {
+//        while(nodes.size() <= pageId) {
+//            BPlusNode newNode{};
+//            std::memset(&newNode, 0, sizeof(BPlusNode));
+//            nodes.push_back(newNode);
+//        }
+//        std::memcpy(&nodes[pageId], &node, sizeof(BPlusNode));
+//        return *this;
+//    }
+//private:
+//    std::vector<BPlusNode> nodes;
+//};
+
 class Pager {
 public:
     explicit Pager(const std::string &fileName) : m_fileName(fileName) {
