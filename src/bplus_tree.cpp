@@ -287,7 +287,9 @@ size_t BPlusTree::splitNonLeaf(size_t nodePageId, int key, size_t newChildPageId
     oldNode->children[midPoint] = allChildren[midPoint];
     
     // Set up new node - keep second half including the middle key
-    // This is similar to leaf splits - we keep the split key in the right sibling
+    // In this implementation, we keep the split key in the right sibling
+    // (similar to leaf splits) which is valid for B+ trees since internal
+    // keys are just routing keys. The parent will also store this key.
     newNode->keyCount = totalKeys - midPoint;
     for (int i = 0; i < newNode->keyCount; i++) {
         newNode->keys[i] = allKeys[midPoint + i];
