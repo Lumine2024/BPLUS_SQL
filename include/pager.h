@@ -154,7 +154,7 @@ public:
     // Metadata operations - store at the beginning of file (before first page)
     template<typename T>
     void writeMetadata(const T& metadata) {
-        static_assert(sizeof(T) <= PAGE_SIZE, "Metadata must fit in one page");
+        static_assert(sizeof(T) <= PAGE_SIZE, "Metadata type T must fit in one page");
         
         // Seek to the beginning of file
         m_file.clear();
@@ -167,7 +167,7 @@ public:
     
     template<typename T>
     void readMetadata(T& metadata) {
-        static_assert(sizeof(T) <= PAGE_SIZE, "Metadata must fit in one page");
+        static_assert(sizeof(T) <= PAGE_SIZE, "Metadata type T must fit in one page");
         
         // Seek to the beginning of file
         m_file.clear();
@@ -175,6 +175,11 @@ public:
         
         // Read metadata
         m_file.read(reinterpret_cast<char*>(&metadata), sizeof(T));
+        
+        // Check if read was successful
+        if (!m_file.good()) {
+            throw std::runtime_error("Failed to read metadata from file");
+        }
     }
     
     bool fileExists() const {

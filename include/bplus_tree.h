@@ -15,7 +15,6 @@ class BPlusTree {
 public:
     static constexpr int MIN_KEYS = 64;  // Minimum keys per node (half of max)
     static constexpr int MAX_KEYS = 128; // Maximum keys per node
-    static constexpr size_t METADATA_PAGE_ID = 0xFFFFFFFF; // Use a special page ID for metadata
     
     // Metadata structure to persist tree state
     struct TreeMetadata {
@@ -27,8 +26,8 @@ public:
     explicit BPlusTree(const std::string& fileName)
         : m_pager(std::make_unique<Pager>(fileName)) {
         
-        // Check if file exists and has metadata
-        if (m_pager->fileExists() && m_pager->getFileSize() > 0) {
+        // Check if file exists and has valid metadata
+        if (m_pager->fileExists() && m_pager->getFileSize() >= sizeof(TreeMetadata)) {
             // Load existing tree metadata
             loadMetadata();
         } else {
