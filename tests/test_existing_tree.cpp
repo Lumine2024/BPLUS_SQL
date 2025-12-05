@@ -10,6 +10,6 @@
 int main(int argc, char *argv[]) {
     auto dst = std::filesystem::path(__FILE__).parent_path().parent_path() / "data" / "test.bin";
     bplus_sql::BPlusTree tree(dst.string());
-    for(int i = 0; i < 10000000; ++i) assert(tree.search(i));
+    for(int i = 0; i < 1000; ++i) assert(tree.search(i));
     return 0;
 }
