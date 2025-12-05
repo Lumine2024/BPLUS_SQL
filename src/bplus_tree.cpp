@@ -139,23 +139,12 @@ bool BPlusTree::insert(int key) {
                 return {false, 0, 0};
             } else {
                 // This node is also full, need to split it
-                // For simplicity in this implementation, we'll just refuse to split internal nodes
-                // and allow them to exceed MAX_KEYS slightly
-                int insertPos = findKeyIndex(node, childSplit.splitKey);
-                
-                // Shift keys and children
-                for (int i = node->keyCount; i > insertPos; i--) {
-                    node->keys[i] = node->keys[i - 1];
-                    node->children[i + 1] = node->children[i];
-                }
-                
-                node->keys[insertPos] = childSplit.splitKey;
-                node->children[insertPos + 1] = childSplit.newPageId;
-                node->keyCount++;
-                
-                putNode(pageId, node);
                 delete node;
-                return {false, 0, 0};
+                size_t newNodePageId = splitNonLeaf(pageId, childSplit.splitKey, childSplit.newPageId);
+                BPlusNode* newNode = getNode(newNodePageId);
+                int splitKey = newNode->keys[0];
+                delete newNode;
+                return {true, splitKey, newNodePageId};
             }
         }
     };
@@ -246,6 +235,72 @@ size_t BPlusTree::splitLeaf(size_t leafPageId, int key) {
     delete newLeaf;
     
     return newLeafPageId;
+}
+
+size_t BPlusTree::splitNonLeaf(size_t nodePageId, int key, size_t newChildPageId) {
+    BPlusNode* oldNode = getNode(nodePageId);
+    size_t newNodePageId = allocatePage();
+    BPlusNode* newNode = createNode(false);
+    
+    // Create temporary arrays with all keys and children including new one
+    std::vector<int> allKeys(MAX_KEYS + 1);
+    std::vector<size_t> allChildren(MAX_KEYS + 2);
+    
+    // Find insertion position
+    int insertPos = findKeyIndex(oldNode, key);
+    
+    // Copy keys before insertion point
+    for (int i = 0; i < insertPos; i++) {
+        allKeys[i] = oldNode->keys[i];
+    }
+    
+    // Insert new key
+    allKeys[insertPos] = key;
+    
+    // Copy keys after insertion point
+    for (int i = insertPos; i < oldNode->keyCount; i++) {
+        allKeys[i + 1] = oldNode->keys[i];
+    }
+    
+    // Copy children before insertion point
+    for (int i = 0; i <= insertPos; i++) {
+        allChildren[i] = oldNode->children[i];
+    }
+    
+    // Insert new child
+    allChildren[insertPos + 1] = newChildPageId;
+    
+    // Copy children after insertion point
+    for (int i = insertPos + 1; i <= oldNode->keyCount; i++) {
+        allChildren[i + 1] = oldNode->children[i];
+    }
+    
+    int totalKeys = oldNode->keyCount + 1;
+    int midPoint = totalKeys / 2;
+    
+    // Update old node - keep first half of keys (0 to midPoint-1)
+    oldNode->keyCount = midPoint;
+    for (int i = 0; i < midPoint; i++) {
+        oldNode->keys[i] = allKeys[i];
+        oldNode->children[i] = allChildren[i];
+    }
+    oldNode->children[midPoint] = allChildren[midPoint];
+    
+    // Set up new node - keep second half including the middle key
+    // This is similar to leaf splits - we keep the split key in the right sibling
+    newNode->keyCount = totalKeys - midPoint;
+    for (int i = 0; i < newNode->keyCount; i++) {
+        newNode->keys[i] = allKeys[midPoint + i];
+        newNode->children[i] = allChildren[midPoint + i];
+    }
+    newNode->children[newNode->keyCount] = allChildren[totalKeys];
+    
+    putNode(nodePageId, oldNode);
+    putNode(newNodePageId, newNode);
+    delete oldNode;
+    delete newNode;
+    
+    return newNodePageId;
 }
 
 bool BPlusTree::erase(int key) {
