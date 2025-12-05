@@ -15,16 +15,41 @@ class BPlusTree {
 public:
     static constexpr int MIN_KEYS = 64;  // Minimum keys per node (half of max)
     static constexpr int MAX_KEYS = 128; // Maximum keys per node
+    static constexpr size_t METADATA_PAGE_ID = 0xFFFFFFFF; // Use a special page ID for metadata
+    
+    // Metadata structure to persist tree state
+    struct TreeMetadata {
+        size_t rootPageId;
+        size_t nextPageId;
+        char padding[Pager::PAGE_SIZE - 2 * sizeof(size_t)]; // Pad to page size
+    };
     
     explicit BPlusTree(const std::string& fileName)
-        : m_rootPageId(0), m_nextPageId(1), m_pager(std::make_unique<Pager>(fileName)) {
+        : m_pager(std::make_unique<Pager>(fileName)) {
         
-        // Create root node
-        BPlusNode* root = createNode(true); // Start with leaf as root
-        putNode(m_rootPageId, root);
-        delete root;
+        // Check if file exists and has metadata
+        if (m_pager->fileExists() && m_pager->getFileSize() > 0) {
+            // Load existing tree metadata
+            loadMetadata();
+        } else {
+            // Initialize new tree
+            m_rootPageId = 0;
+            m_nextPageId = 1;
+            
+            // Create root node
+            BPlusNode* root = createNode(true); // Start with leaf as root
+            putNode(m_rootPageId, root);
+            delete root;
+            
+            // Save initial metadata
+            saveMetadata();
+        }
     }
-    ~BPlusTree() = default;
+    
+    ~BPlusTree() {
+        // Save metadata on destruction
+        saveMetadata();
+    }
     
     bool insert(int key) {
         // Helper function to recursively insert and handle splits
@@ -340,6 +365,25 @@ private:
         return true;
     }
     void mergeOrRedistribute(size_t pageId) {}
+    
+    // Metadata persistence methods
+    void saveMetadata() {
+        TreeMetadata metadata;
+        metadata.rootPageId = m_rootPageId;
+        metadata.nextPageId = m_nextPageId;
+        std::memset(metadata.padding, 0, sizeof(metadata.padding));
+        
+        // Write metadata to special page
+        m_pager->writeMetadata(metadata);
+    }
+    
+    void loadMetadata() {
+        TreeMetadata metadata;
+        m_pager->readMetadata(metadata);
+        
+        m_rootPageId = metadata.rootPageId;
+        m_nextPageId = metadata.nextPageId;
+    }
     
     // Utility methods
     int findKeyIndex(const BPlusNode* node, int key) {
