@@ -54,5 +54,6 @@ out/
 /.vs
 
 */test_cmd.sql
-*/test_result.txt
-*/test_result_2.txt
+*/test_result_bf.txt
+*/test_result_bplus.txt
+test_result_bplus.txt
