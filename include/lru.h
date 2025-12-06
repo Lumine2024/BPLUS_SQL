@@ -5,6 +5,7 @@
 #include "pager.h"
 #include <unordered_map>
 #include <list>
+#include <memory>
 
 namespace bplus_sql {
 
@@ -13,17 +14,13 @@ public:
     static constexpr size_t CAPACITY = 1ull << 10;
     
     LRUCache() = default;
-    ~LRUCache() {
-        for (auto& pair : m_cache) {
-            delete pair.second.first;
-        }
-    }
+    ~LRUCache() = default;
     
     // Delete copy constructor and assignment operator to prevent issues
     LRUCache(const LRUCache&) = delete;
     LRUCache& operator=(const LRUCache&) = delete;
     
-    BPlusNode* get(size_t pageId) {
+    std::shared_ptr<BPlusNode> get(size_t pageId) {
         auto it = m_cache.find(pageId);
         if (it == m_cache.end()) {
             return nullptr;
@@ -36,11 +33,10 @@ public:
         
         return it->second.first;
     }
-    void put(size_t pageId, BPlusNode* node) {
+    void put(size_t pageId, std::shared_ptr<BPlusNode> node) {
         auto it = m_cache.find(pageId);
         if (it != m_cache.end()) {
             // Update existing entry
-            delete it->second.first;
             m_list.erase(it->second.second);
             m_list.push_front(pageId);
             it->second = {node, m_list.begin()};
@@ -58,13 +54,33 @@ public:
     void remove(size_t pageId) {
         auto it = m_cache.find(pageId);
         if (it != m_cache.end()) {
-            delete it->second.first;
             m_list.erase(it->second.second);
             m_cache.erase(it);
         }
     }
     bool contains(size_t pageId) const {
         return m_cache.contains(pageId);
+    }
+    
+    size_t size() const {
+        return m_cache.size();
+    }
+    
+    // Traverse all nodes in cache and apply function fn to each
+    template<typename Func>
+    void traverse(Func&& fn) {
+        for(auto& [pageId, pair_of_node_and_iterator] : m_cache) {
+            fn(pageId, pair_of_node_and_iterator.first);
+        }
+    }
+    
+    // Get the tail (least recently used) node without removing it
+    std::pair<size_t, std::shared_ptr<BPlusNode>> tail() const {
+        if (m_list.empty()) {
+            return {0, nullptr};
+        }
+        size_t backId = m_list.back();
+        return std::make_pair(backId, m_cache.at(backId).first);
     }
     
 private:
@@ -74,14 +90,13 @@ private:
             m_list.pop_back();
             auto it = m_cache.find(lru_page);
             if (it != m_cache.end()) {
-                delete it->second.first;
                 m_cache.erase(it);
             }
         }
     }
     
     std::list<size_t> m_list;
-    std::unordered_map<size_t, std::pair<BPlusNode *, std::list<size_t>::iterator>> m_cache;
+    std::unordered_map<size_t, std::pair<std::shared_ptr<BPlusNode>, std::list<size_t>::iterator>> m_cache;
 };
 
 }
