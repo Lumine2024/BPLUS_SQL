@@ -32,14 +32,8 @@ public:
             BPlusNode result;
             m_pager.readPage(pageId, result);
             
-            // Check if we're at capacity and need to evict
-            if(m_lru.size() >= LRUCache::CAPACITY) {
-                // Get the tail node (least recently used) and write it back to pager
-                auto [tailPageId, tailNode] = m_lru.tail();
-                if(tailNode != nullptr) {
-                    m_pager.writePage(tailPageId, *tailNode);
-                }
-            }
+            // Evict LRU node if at capacity
+            evictIfNeeded();
             
             // Store a copy in cache
             m_lru.put(pageId, std::make_shared<BPlusNode>(result));
@@ -56,14 +50,8 @@ public:
         if(m_lru.contains(pageId)) {
             m_lru.put(pageId, cachedCopy);
         } else {
-            // Check if we're at capacity and need to evict
-            if(m_lru.size() >= LRUCache::CAPACITY) {
-                // Get the tail node (least recently used) and write it back to pager
-                auto [tailPageId, tailNode] = m_lru.tail();
-                if(tailNode != nullptr) {
-                    m_pager.writePage(tailPageId, *tailNode);
-                }
-            }
+            // Evict LRU node if at capacity
+            evictIfNeeded();
             m_lru.put(pageId, cachedCopy);
         }
     }
@@ -88,6 +76,17 @@ public:
     }
     
 private:
+    void evictIfNeeded() {
+        // Check if we're at capacity and need to evict
+        if(m_lru.size() >= LRUCache::CAPACITY) {
+            // Get the tail node (least recently used) and write it back to pager
+            auto [tailPageId, tailNode] = m_lru.tail();
+            if(tailNode != nullptr) {
+                m_pager.writePage(tailPageId, *tailNode);
+            }
+        }
+    }
+    
     LRUCache m_lru;
     Pager m_pager;
 };

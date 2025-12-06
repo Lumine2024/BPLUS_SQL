@@ -383,8 +383,8 @@ private:
 public:
     void dfs() {
         auto _dfs = [&](auto &&self, int u) -> void {
-			BPlusNode v = getNode(u);
-			std::cout << std::format("Node PageID: {}, isLeaf: {}, keyCount: {}\n", u, v.isLeaf, v.keyCount);
+            BPlusNode v = getNode(u);
+            std::cout << std::format("Node PageID: {}, isLeaf: {}, keyCount: {}\n", u, v.isLeaf, v.keyCount);
             std::cout << "Keys: ";
             for(int i = 0; i < v.keyCount; ++i) {
                 std::cout << v.keys[i] << " ";
@@ -393,12 +393,12 @@ public:
                 for(int i = 0; i <= v.keyCount; ++i) {
                     std::cout << "\nChild " << i << " PageID: " << v.children[i] << "\n";
                 }
-				for(int i = 0; i <= v.keyCount; ++i) {
+                for(int i = 0; i <= v.keyCount; ++i) {
                     self(self, v.children[i]);
                 }
             }
         };
-		_dfs(_dfs, m_rootPageId);
+        _dfs(_dfs, m_rootPageId);
     }
 };
 

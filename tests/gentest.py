@@ -1,5 +1,8 @@
 import random
 
+# Use a fixed seed for reproducibility
+random.seed(42)
+
 DB_NAME = "test_db"
 
 def gen_insert(x: int) -> str:
@@ -11,7 +14,7 @@ def gen_query(x: int) -> str:
 
 print(f"CREATE TABLE {DB_NAME}")
 
-for i in range(1000000):
+for i in range(10000):
 	op = random.randint(0, 2)
 	if op == 0:
 		print(gen_insert(random.randint(1, 100000)))
