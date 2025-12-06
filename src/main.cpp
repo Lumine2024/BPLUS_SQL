@@ -15,6 +15,11 @@ std::string tolower(std::string str) {
 }
 
 int main(int argc, char* argv[]) {
+    // speed_up IO
+    std::ios_base::sync_with_stdio(false);
+	// It is not important whether std::cin tie with std::cout, because database is INTERACTIVE, 
+	// and when we query, we should always flush
+
 	std::ifstream inFile;
 	if(argc > 1) {
 		std::string fileName = argv[1];

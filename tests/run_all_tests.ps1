@@ -2,6 +2,8 @@
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location (Join-Path $scriptDir "..")
 
+# erase old built project that are maybe compiled before and cannot reference changes
+Remove-Item -LiteralPath 'D:\BPLUS_SQL\build' -Recurse -Force
 # build project
 cmake -S . -B build
 cmake --build build --config Debug
@@ -60,15 +62,26 @@ if (Test-Path data/test.bin) {
 RunTest "parse_commands"
 
 Write-Host "Running test main"
-python tests/gentest.py > tests/test_cmd.sql
+# Use C++ helpers gentest and test_bf instead of Python
+$gentest = Find-Executable "gentest"
+if ($null -eq $gentest) {
+    Write-Host "gentest executable not found" -ForegroundColor Red
+    exit 1
+}
+& $gentest | Out-File -FilePath tests/test_cmd.sql -Encoding utf8
 if($LASTEXITCODE -ne 0) {
-    Write-Host "gentest.py failed" -ForegroundColor Red
+    Write-Host "gentest failed" -ForegroundColor Red
     exit 1
 }
 
-Get-Content tests/test_cmd.sql | python tests/test_bf.py > tests/test_result_bf.txt
+$testbf = Find-Executable "test_bf"
+if ($null -eq $testbf) {
+    Write-Host "test_bf executable not found" -ForegroundColor Red
+    exit 1
+}
+Get-Content tests/test_cmd.sql | & $testbf | Out-File -FilePath tests/test_result_bf.txt -Encoding utf8
 if($LASTEXITCODE -ne 0) {
-    Write-Host "test_bf.py failed" -ForegroundColor Red
+    Write-Host "test_bf failed" -ForegroundColor Red
     exit 1
 }
 
@@ -77,7 +90,7 @@ if ($null -eq $mainExe) {
     Write-Host "main executable not found" -ForegroundColor Red
     exit 1
 }
-Get-Content tests/test_cmd.sql | & $mainExe > tests/test_result_bplus.txt
+Get-Content tests/test_cmd.sql | & $mainExe | Out-File -FilePath tests/test_result_bplus.txt -Encoding utf8
 if($LASTEXITCODE -ne 0) {
     Write-Host "Test main failed: Runtime error" -ForegroundColor Red
     exit 1
