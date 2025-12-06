@@ -11,18 +11,28 @@ if($LASTEXITCODE -ne 0) {
 }
 
 # run tests
+function Find-Executable([string]$Name) {
+    $locations = @(
+        "./build/Debug/$Name.exe",
+        "./build/$Name.exe",
+        "./build/$Name"
+    )
+    
+    foreach ($path in $locations) {
+        if (Test-Path $path) {
+            return $path
+        }
+    }
+    
+    return $null
+}
+
 function RunTest([string]$TestName) {
     Write-Host "Running test $TestName"
-    $exe = "./build/Debug/$TestName.exe"
-    if (-not (Test-Path $exe)) {
-        $exe = "./build/$TestName.exe"
-        if (-not (Test-Path $exe)) {
-            $exe = "./build/$TestName"
-            if (-not (Test-Path $exe)) {
-                Write-Host "Test $TestName failed: executable not found" -ForegroundColor Red
-                exit 1
-            }
-        }
+    $exe = Find-Executable $TestName
+    if ($null -eq $exe) {
+        Write-Host "Test $TestName failed: executable not found" -ForegroundColor Red
+        exit 1
     }
     & $exe
     if($LASTEXITCODE -ne 0) {
@@ -62,16 +72,10 @@ if($LASTEXITCODE -ne 0) {
     exit 1
 }
 
-$mainExe = "./build/Debug/main.exe"
-if (-not (Test-Path $mainExe)) {
-    $mainExe = "./build/main.exe"
-    if (-not (Test-Path $mainExe)) {
-        $mainExe = "./build/main"
-        if (-not (Test-Path $mainExe)) {
-            Write-Host "main executable not found" -ForegroundColor Red
-            exit 1
-        }
-    }
+$mainExe = Find-Executable "main"
+if ($null -eq $mainExe) {
+    Write-Host "main executable not found" -ForegroundColor Red
+    exit 1
 }
 Get-Content tests/test_cmd.sql | & $mainExe > tests/test_result_bplus.txt
 if($LASTEXITCODE -ne 0) {
