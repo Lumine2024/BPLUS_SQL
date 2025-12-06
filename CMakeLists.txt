@@ -17,3 +17,10 @@ target_include_directories(test_existing_tree PRIVATE ${CMAKE_CURRENT_SOURCE_DIR
 
 add_executable(parse_commands tests/parse_commands.cpp)
 target_include_directories(parse_commands PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+# Test helpers converted from Python
+add_executable(gentest tests/gentest.cpp)
+target_include_directories(gentest PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+add_executable(test_bf tests/test_bf.cpp)
+target_include_directories(test_bf PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)

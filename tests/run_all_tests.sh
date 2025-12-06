@@ -67,10 +67,26 @@ run_test "test_existing_tree"
 run_test "parse_commands"
 
 echo "Running test main"
-# generate commands and bf expected result
-python tests/gentest.py > tests/test_cmd.sql
-if ! python tests/test_bf.py < tests/test_cmd.sql > tests/test_result_bf.txt; then
-	echo "test_bf.py failed" >&2
+# generate commands and bf expected result using C++ helpers
+gentest_exe=$(find_exe gentest)
+if [ -z "$gentest_exe" ]; then
+	echo "gentest executable not found" >&2
+	exit 1
+fi
+
+if ! "$gentest_exe" > tests/test_cmd.sql; then
+	echo "gentest failed" >&2
+	exit 1
+fi
+
+test_bf_exe=$(find_exe test_bf)
+if [ -z "$test_bf_exe" ]; then
+	echo "test_bf executable not found" >&2
+	exit 1
+fi
+
+if ! cat tests/test_cmd.sql | "$test_bf_exe" > tests/test_result_bf.txt; then
+	echo "test_bf failed" >&2
 	exit 1
 fi
 
