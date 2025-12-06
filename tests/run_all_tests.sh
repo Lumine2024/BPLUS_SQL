@@ -95,5 +95,8 @@ if [ "$f1" != "$f2" ]; then
 fi
 echo "Test main passed"
 
+echo ""
+echo "All tests passed!"
+
 # return to tests dir
 cd tests
