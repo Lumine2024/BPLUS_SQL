@@ -8,7 +8,7 @@ Remove-Item -LiteralPath 'D:\BPLUS_SQL\build' -Recurse -Force
 cmake -S . -B build
 cmake --build build --config Debug
 if($LASTEXITCODE -ne 0) {
-    Write-Host "Compile error" -ForegroundColor Red
+    Write-Output "Compile error"
     exit 1
 }
 
@@ -30,18 +30,18 @@ function Find-Executable([string]$Name) {
 }
 
 function RunTest([string]$TestName) {
-    Write-Host "Running test $TestName"
+    Write-Output "Running test $TestName"
     $exe = Find-Executable $TestName
     if ($null -eq $exe) {
-        Write-Host "Test $TestName failed: executable not found" -ForegroundColor Red
+        Write-Output "Test $TestName failed: executable not found"
         exit 1
     }
     & $exe
     if($LASTEXITCODE -ne 0) {
-        Write-Host "Test $TestName failed" -ForegroundColor Red
+        Write-Output "Test $TestName failed"
         exit 1
     }
-    Write-Host "Test $TestName passed" -ForegroundColor Green
+    Write-Output "Test $TestName passed"
 }
 
 RunTest "pressure_test"
@@ -61,18 +61,18 @@ if (Test-Path data/test.bin) {
 
 RunTest "parse_commands"
 
-Write-Host "Running test rb_tree"
+Write-Output "Running test rb_tree"
 $rbTreeExe = Find-Executable "rb_tree"
 if ($null -eq $rbTreeExe) {
-    Write-Host "rb_tree executable not found" -ForegroundColor Red
+    Write-Output "rb_tree executable not found"
     exit 1
 }
 & $rbTreeExe
 if($LASTEXITCODE -ne 0) {
-    Write-Host "Test rb_tree failed" -ForegroundColor Red
+    Write-Output "Test rb_tree failed"
     exit 1
 }
-Write-Host "Test rb_tree passed" -ForegroundColor Green
+Write-Output "Test rb_tree passed"
 
 # Remove test data if present
 if (Test-Path data/test.bin) {
@@ -82,46 +82,46 @@ if (Test-Path data/_test_for_rb_tree.bin) {
     Remove-Item data/_test_for_rb_tree.bin
 }
 
-Write-Host "Running test main"
+Write-Output "Running test main"
 # Use C++ helpers gentest and test_bf instead of Python
 $gentest = Find-Executable "gentest"
 if ($null -eq $gentest) {
-    Write-Host "gentest executable not found" -ForegroundColor Red
+    Write-Output "gentest executable not found"
     exit 1
 }
 & $gentest | Out-File -FilePath tests/test_cmd.sql -Encoding utf8
 if($LASTEXITCODE -ne 0) {
-    Write-Host "gentest failed" -ForegroundColor Red
+    Write-Output "gentest failed"
     exit 1
 }
 
 $testbf = Find-Executable "test_bf"
 if ($null -eq $testbf) {
-    Write-Host "test_bf executable not found" -ForegroundColor Red
+    Write-Output "test_bf executable not found"
     exit 1
 }
 & $testbf tests/test_cmd.sql | Out-File -FilePath tests/test_result_bf.txt -Encoding utf8
 if($LASTEXITCODE -ne 0) {
-    Write-Host "test_bf failed" -ForegroundColor Red
+    Write-Output "test_bf failed"
     exit 1
 }
 
 $mainExe = Find-Executable "main"
 if ($null -eq $mainExe) {
-    Write-Host "main executable not found" -ForegroundColor Red
+    Write-Output "main executable not found"
     exit 1
 }
 & $mainExe tests/test_cmd.sql | Out-File -FilePath tests/test_result_bplus.txt -Encoding utf8
 if($LASTEXITCODE -ne 0) {
-    Write-Host "Test main failed: Runtime error" -ForegroundColor Red
+    Write-Output "Test main failed: Runtime error"
     exit 1
 }
 $f1 = (Get-Content tests/test_result_bf.txt -Raw) -replace '\s+', ''
 $f2 = (Get-Content tests/test_result_bplus.txt -Raw) -replace '\s+', ''
 if($f1 -ne $f2) {
-    Write-Host "Test main failed: Wrong answer" -ForegroundColor Red
+    Write-Output "Test main failed: Wrong answer"
     exit 1
 }
-Write-Host "Test main passed" -ForegroundColor Green
+Write-Output "Test main passed"
 
-Write-Host "`nAll tests passed!" -ForegroundColor Green
+Write-Output "`nAll tests passed!"
