@@ -24,3 +24,6 @@ target_include_directories(gentest PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 add_executable(test_bf tests/test_bf.cpp)
 target_include_directories(test_bf PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+add_executable(rb_tree tests/rb_tree.cpp)
+target_include_directories(rb_tree PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
