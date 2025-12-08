@@ -9,6 +9,7 @@
 #include <vector>
 #include <unordered_map>
 #include <list>
+#include <filesystem>
 
 // Red-Black Tree node colors
 enum class Color : uint8_t { RED = 0, BLACK = 1 };
@@ -21,11 +22,11 @@ struct RBNode {
     size_t parent;
     size_t left;   // left child page id
     size_t right;  // right child page id
-    // Calculate padding to ensure struct is exactly 4096 bytes
-    char padding[4096 - sizeof(int) - sizeof(Color) - 3 - 3 * sizeof(size_t)];
+    // Calculate padding to ensure struct is exactly PAGE_SIZE bytes
+    char padding[bplus_sql::Pager::PAGE_SIZE - sizeof(int) - sizeof(Color) - 3 - 3 * sizeof(size_t)];
 };
 
-static_assert(sizeof(RBNode) <= 4096, "RBNode must fit in a page");
+static_assert(sizeof(RBNode) <= bplus_sql::Pager::PAGE_SIZE, "RBNode must fit in a page");
 
 // LRU Cache for RB tree nodes
 class RBNodeCache {
@@ -253,7 +254,6 @@ private:
             auto [tailId, tailNode] = m_cache.tail();
             if (tailNode != nullptr) {
                 m_pager.writePage(tailId, *tailNode);
-                m_cache.remove(tailId);
             }
         }
         
@@ -262,21 +262,15 @@ private:
     }
     
     void writeNode(size_t pageId, const RBNode& node) {
-        auto cached = std::make_shared<RBNode>(node);
-        
-        if (m_cache.contains(pageId)) {
-            m_cache.put(pageId, cached);
-        } else {
-            // Evict LRU if at capacity before adding new node
-            if (m_cache.size() >= RBNodeCache::CAPACITY) {
-                auto [tailId, tailNode] = m_cache.tail();
-                if (tailNode != nullptr) {
-                    m_pager.writePage(tailId, *tailNode);
-                    m_cache.remove(tailId);
-                }
+        // Evict LRU if at capacity and this is a new node
+        if (!m_cache.contains(pageId) && m_cache.size() >= RBNodeCache::CAPACITY) {
+            auto [tailId, tailNode] = m_cache.tail();
+            if (tailNode != nullptr) {
+                m_pager.writePage(tailId, *tailNode);
             }
-            m_cache.put(pageId, cached);
         }
+        
+        m_cache.put(pageId, std::make_shared<RBNode>(node));
     }
     
     size_t allocateNode() {
