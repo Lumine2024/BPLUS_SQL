@@ -14,6 +14,8 @@ std::string tolower(std::string str) {
 	return str;
 }
 
+char buffer[1 << 24];
+
 int main(int argc, char* argv[]) {
     // speed_up IO
     std::ios_base::sync_with_stdio(false);
@@ -28,7 +30,10 @@ int main(int argc, char* argv[]) {
 			std::cout << "File didn't open" << std::endl;
 			return -1;
 		}
+		inFile.rdbuf()->pubsetbuf(buffer, 1 << 24);
 		std::cin.rdbuf(inFile.rdbuf());
+	} else {
+		std::cin.rdbuf()->pubsetbuf(buffer, 1 << 24);
 	}
 	std::string command;
 	std::unordered_map<std::string, std::unique_ptr<bplus_sql::BPlusTree>> trees;

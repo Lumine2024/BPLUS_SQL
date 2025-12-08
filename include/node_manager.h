@@ -91,10 +91,6 @@ private:
     Pager m_pager;
 };
 
-
-
 }
-
-
 
 #endif

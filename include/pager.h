@@ -12,31 +12,6 @@
 
 namespace bplus_sql {
 
-//class Pager {
-//public:
-//    explicit Pager(const std::string &) {}
-//    Pager &readPage(unsigned pageId, BPlusNode &node) {
-//        while(nodes.size() <= pageId) {
-//            BPlusNode newNode{};
-//            std::memset(&newNode, 0, sizeof(BPlusNode));
-//            nodes.push_back(newNode);
-//        }
-//        std::memcpy(&node, &nodes[pageId], sizeof(BPlusNode));
-//        return *this;
-//    }
-//    Pager &writePage(unsigned pageId, BPlusNode &node) {
-//        while(nodes.size() <= pageId) {
-//            BPlusNode newNode{};
-//            std::memset(&newNode, 0, sizeof(BPlusNode));
-//            nodes.push_back(newNode);
-//        }
-//        std::memcpy(&nodes[pageId], &node, sizeof(BPlusNode));
-//        return *this;
-//    }
-//private:
-//    std::vector<BPlusNode> nodes;
-//};
-
 class Pager {
 public:
     explicit Pager(const std::string &fileName) : m_fileName(fileName) {
@@ -104,7 +79,9 @@ public:
         m_file.clear(); // Clear any flags
     }
 
-    Pager &readPage(size_t pageId, BPlusNode &node) {
+    template<typename T>
+    void readPage(size_t pageId, T &node) {
+        static_assert(sizeof(T) <= PAGE_SIZE, "T should fit in a page");
         // Ensure the page exists
         ensurePageExists(pageId);
         
@@ -116,7 +93,6 @@ public:
         if (!m_file.good()) {
             // Failed to seek, zero out the node and return
             std::memset(&node, 0, sizeof(node));
-            return *this;
         }
         
         // Read the page into a buffer (use heap allocation to avoid stack overflow)
@@ -125,11 +101,12 @@ public:
         
         // Copy node data from buffer
         std::memcpy(&node, pageBuf.data(), sizeof(node));
-        
-        return *this;
     }
 
-    Pager &writePage(size_t pageId, BPlusNode &node) {
+    template<typename T>
+    void writePage(size_t pageId, T &node) {
+        static_assert(sizeof(T) <= PAGE_SIZE, "T should fit in a page");
+        
         // Ensure the page exists
         ensurePageExists(pageId);
         
@@ -147,8 +124,6 @@ public:
         // Write the page
         m_file.write(pageBuf.data(), PAGE_SIZE);
         m_file.flush();
-        
-        return *this;
     }
     
     // Metadata operations - store at the beginning of file (before first page)

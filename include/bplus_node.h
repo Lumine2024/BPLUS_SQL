@@ -18,5 +18,4 @@ static_assert(sizeof(BPlusNode) <= (1ull << 12));
 
 }
 
-
 #endif

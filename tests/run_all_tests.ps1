@@ -2,7 +2,7 @@
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location (Join-Path $scriptDir "..")
 
-# erase old built project that are maybe compiled before and cannot reference changes
+# erase executables built before
 Remove-Item -LiteralPath 'D:\BPLUS_SQL\build' -Recurse -Force
 # build project
 cmake -S . -B build
