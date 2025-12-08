@@ -1,17 +1,31 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <fstream>
 #include "cmdparser.h"
 
 using bplus_sql::CmdParser;
 
 char buffer[1 << 24];
 
-int main() {
+int main(int argc, char* argv[]) {
     // speed_up IO
     std::ios_base::sync_with_stdio(false);
     std::cin.tie(nullptr);
-    std::cin.rdbuf()->pubsetbuf(buffer, 1 << 24);
+
+    std::ifstream inFile;
+    if (argc > 1) {
+        std::string fileName = argv[1];
+        inFile.open(fileName, std::ios_base::in);
+        if (!inFile.is_open()) {
+            std::cout << "File didn't open" << std::endl;
+            return -1;
+        }
+        inFile.rdbuf()->pubsetbuf(buffer, 1 << 24);
+        std::cin.rdbuf(inFile.rdbuf());
+    } else {
+        std::cin.rdbuf()->pubsetbuf(buffer, 1 << 24);
+    }
 
     std::vector<int> has_key(100005, 0);
     std::string line;

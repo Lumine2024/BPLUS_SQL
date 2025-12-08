@@ -61,6 +61,27 @@ if (Test-Path data/test.bin) {
 
 RunTest "parse_commands"
 
+Write-Host "Running test rb_tree"
+$rbTreeExe = Find-Executable "rb_tree"
+if ($null -eq $rbTreeExe) {
+    Write-Host "rb_tree executable not found" -ForegroundColor Red
+    exit 1
+}
+& $rbTreeExe
+if($LASTEXITCODE -ne 0) {
+    Write-Host "Test rb_tree failed" -ForegroundColor Red
+    exit 1
+}
+Write-Host "Test rb_tree passed" -ForegroundColor Green
+
+# Remove test data if present
+if (Test-Path data/test.bin) {
+    Remove-Item data/test.bin
+}
+if (Test-Path data/_test_for_rb_tree.bin) {
+    Remove-Item data/_test_for_rb_tree.bin
+}
+
 Write-Host "Running test main"
 # Use C++ helpers gentest and test_bf instead of Python
 $gentest = Find-Executable "gentest"
@@ -79,7 +100,7 @@ if ($null -eq $testbf) {
     Write-Host "test_bf executable not found" -ForegroundColor Red
     exit 1
 }
-Get-Content tests/test_cmd.sql | & $testbf | Out-File -FilePath tests/test_result_bf.txt -Encoding utf8
+& $testbf tests/test_cmd.sql | Out-File -FilePath tests/test_result_bf.txt -Encoding utf8
 if($LASTEXITCODE -ne 0) {
     Write-Host "test_bf failed" -ForegroundColor Red
     exit 1
@@ -90,7 +111,7 @@ if ($null -eq $mainExe) {
     Write-Host "main executable not found" -ForegroundColor Red
     exit 1
 }
-Get-Content tests/test_cmd.sql | & $mainExe | Out-File -FilePath tests/test_result_bplus.txt -Encoding utf8
+& $mainExe tests/test_cmd.sql | Out-File -FilePath tests/test_result_bplus.txt -Encoding utf8
 if($LASTEXITCODE -ne 0) {
     Write-Host "Test main failed: Runtime error" -ForegroundColor Red
     exit 1
