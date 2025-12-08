@@ -1,6 +1,5 @@
 #include "bplus_tree.h"
 #include "pager.h"
-#include "lru.h"
 #include <iostream>
 #include <random>
 #include <chrono>
@@ -18,12 +17,12 @@ enum class Color : uint8_t { RED = 0, BLACK = 1 };
 struct RBNode {
     int key;
     Color color;
-    char _padding1[3]; // Align to 8 bytes
+    char _padding1[3]; // Align to 8 bytes for size_t fields
     size_t parent;
     size_t left;   // left child page id
     size_t right;  // right child page id
     // Calculate padding to ensure struct is exactly PAGE_SIZE bytes
-    char padding[bplus_sql::Pager::PAGE_SIZE - sizeof(int) - sizeof(Color) - 3 - 3 * sizeof(size_t)];
+    char padding[bplus_sql::Pager::PAGE_SIZE - sizeof(int) - sizeof(Color) - sizeof(_padding1) - 3 * sizeof(size_t)];
 };
 
 static_assert(sizeof(RBNode) <= bplus_sql::Pager::PAGE_SIZE, "RBNode must fit in a page");
@@ -463,8 +462,8 @@ private:
                         wNode = readNode(w);
                     }
                     
-                    RBNode wLeftNode = readNode(wNode.left);
-                    RBNode wRightNode = readNode(wNode.right);
+                    RBNode wLeftNode = (wNode.left != NIL) ? readNode(wNode.left) : readNode(NIL);
+                    RBNode wRightNode = (wNode.right != NIL) ? readNode(wNode.right) : readNode(NIL);
                     
                     if (wLeftNode.color == Color::BLACK && wRightNode.color == Color::BLACK) {
                         wNode.color = Color::RED;
@@ -472,8 +471,10 @@ private:
                         x = xNode.parent;
                     } else {
                         if (wRightNode.color == Color::BLACK) {
-                            wLeftNode.color = Color::BLACK;
-                            writeNode(wNode.left, wLeftNode);
+                            if (wNode.left != NIL) {
+                                wLeftNode.color = Color::BLACK;
+                                writeNode(wNode.left, wLeftNode);
+                            }
                             
                             wNode.color = Color::RED;
                             writeNode(w, wNode);
@@ -492,9 +493,11 @@ private:
                         parentNode.color = Color::BLACK;
                         writeNode(xNode.parent, parentNode);
                         
-                        wRightNode = readNode(wNode.right);
-                        wRightNode.color = Color::BLACK;
-                        writeNode(wNode.right, wRightNode);
+                        if (wNode.right != NIL) {
+                            wRightNode = readNode(wNode.right);
+                            wRightNode.color = Color::BLACK;
+                            writeNode(wNode.right, wRightNode);
+                        }
                         
                         leftRotate(xNode.parent);
                         x = m_root;
@@ -518,8 +521,8 @@ private:
                         wNode = readNode(w);
                     }
                     
-                    RBNode wLeftNode = readNode(wNode.left);
-                    RBNode wRightNode = readNode(wNode.right);
+                    RBNode wLeftNode = (wNode.left != NIL) ? readNode(wNode.left) : readNode(NIL);
+                    RBNode wRightNode = (wNode.right != NIL) ? readNode(wNode.right) : readNode(NIL);
                     
                     if (wRightNode.color == Color::BLACK && wLeftNode.color == Color::BLACK) {
                         wNode.color = Color::RED;
@@ -527,8 +530,10 @@ private:
                         x = xNode.parent;
                     } else {
                         if (wLeftNode.color == Color::BLACK) {
-                            wRightNode.color = Color::BLACK;
-                            writeNode(wNode.right, wRightNode);
+                            if (wNode.right != NIL) {
+                                wRightNode.color = Color::BLACK;
+                                writeNode(wNode.right, wRightNode);
+                            }
                             
                             wNode.color = Color::RED;
                             writeNode(w, wNode);
@@ -547,9 +552,11 @@ private:
                         parentNode.color = Color::BLACK;
                         writeNode(xNode.parent, parentNode);
                         
-                        wLeftNode = readNode(wNode.left);
-                        wLeftNode.color = Color::BLACK;
-                        writeNode(wNode.left, wLeftNode);
+                        if (wNode.left != NIL) {
+                            wLeftNode = readNode(wNode.left);
+                            wLeftNode.color = Color::BLACK;
+                            writeNode(wNode.left, wLeftNode);
+                        }
                         
                         rightRotate(xNode.parent);
                         x = m_root;
@@ -674,7 +681,12 @@ int main(int argc, char *argv[]) {
     std::cout << "\n=== Performance Results ===\n";
     std::cout << "B+ Tree: " << bplus_time.count() << " ms\n";
     std::cout << "RB Tree: " << rb_time.count() << " ms\n";
-    std::cout << "Speedup: " << (double)rb_time.count() / bplus_time.count() << "x\n";
+    
+    if (bplus_time.count() > 0) {
+        std::cout << "B+ tree is " << (double)rb_time.count() / bplus_time.count() << "x faster than RB tree\n";
+    } else {
+        std::cout << "B+ tree time too small to measure accurately\n";
+    }
     
     return 0;
 }
