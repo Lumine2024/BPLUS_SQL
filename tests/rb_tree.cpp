@@ -239,7 +239,7 @@ public:
     }
     
     bool contains(int key) const {
-        return const_cast<RbTree*>(this)->findNode(key) != NIL;
+        return findNode(key) != NIL;
     }
     
 private:
@@ -262,10 +262,10 @@ private:
         return m_nextPageId++;
     }
     
-    size_t findNode(int key) {
+    size_t findNode(int key) const {
         size_t current = m_root;
         while (current != NIL) {
-            RBNode node = readNode(current);
+            RBNode node = const_cast<RbTree*>(this)->readNode(current);
             if (key == node.key) {
                 return current;
             } else if (key < node.key) {
@@ -462,16 +462,17 @@ private:
                         wNode = readNode(w);
                     }
                     
-                    RBNode wLeftNode = (wNode.left != NIL) ? readNode(wNode.left) : readNode(NIL);
-                    RBNode wRightNode = (wNode.right != NIL) ? readNode(wNode.right) : readNode(NIL);
+                    Color wLeftColor = getNodeColor(wNode.left);
+                    Color wRightColor = getNodeColor(wNode.right);
                     
-                    if (wLeftNode.color == Color::BLACK && wRightNode.color == Color::BLACK) {
+                    if (wLeftColor == Color::BLACK && wRightColor == Color::BLACK) {
                         wNode.color = Color::RED;
                         writeNode(w, wNode);
                         x = xNode.parent;
                     } else {
-                        if (wRightNode.color == Color::BLACK) {
+                        if (wRightColor == Color::BLACK) {
                             if (wNode.left != NIL) {
+                                RBNode wLeftNode = readNode(wNode.left);
                                 wLeftNode.color = Color::BLACK;
                                 writeNode(wNode.left, wLeftNode);
                             }
@@ -494,7 +495,7 @@ private:
                         writeNode(xNode.parent, parentNode);
                         
                         if (wNode.right != NIL) {
-                            wRightNode = readNode(wNode.right);
+                            RBNode wRightNode = readNode(wNode.right);
                             wRightNode.color = Color::BLACK;
                             writeNode(wNode.right, wRightNode);
                         }
@@ -521,16 +522,17 @@ private:
                         wNode = readNode(w);
                     }
                     
-                    RBNode wLeftNode = (wNode.left != NIL) ? readNode(wNode.left) : readNode(NIL);
-                    RBNode wRightNode = (wNode.right != NIL) ? readNode(wNode.right) : readNode(NIL);
+                    Color wLeftColor = getNodeColor(wNode.left);
+                    Color wRightColor = getNodeColor(wNode.right);
                     
-                    if (wRightNode.color == Color::BLACK && wLeftNode.color == Color::BLACK) {
+                    if (wRightColor == Color::BLACK && wLeftColor == Color::BLACK) {
                         wNode.color = Color::RED;
                         writeNode(w, wNode);
                         x = xNode.parent;
                     } else {
-                        if (wLeftNode.color == Color::BLACK) {
+                        if (wLeftColor == Color::BLACK) {
                             if (wNode.right != NIL) {
+                                RBNode wRightNode = readNode(wNode.right);
                                 wRightNode.color = Color::BLACK;
                                 writeNode(wNode.right, wRightNode);
                             }
@@ -553,7 +555,7 @@ private:
                         writeNode(xNode.parent, parentNode);
                         
                         if (wNode.left != NIL) {
-                            wLeftNode = readNode(wNode.left);
+                            RBNode wLeftNode = readNode(wNode.left);
                             wLeftNode.color = Color::BLACK;
                             writeNode(wNode.left, wLeftNode);
                         }
@@ -604,6 +606,14 @@ private:
             }
             x = xNode.left;
         }
+    }
+    
+    // Helper to get node color without reading if it's NIL
+    Color getNodeColor(size_t pageId) {
+        if (pageId == NIL) {
+            return Color::BLACK;
+        }
+        return readNode(pageId).color;
     }
     
     bplus_sql::Pager m_pager;
