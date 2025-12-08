@@ -21,7 +21,8 @@ struct RBNode {
     size_t parent;
     size_t left;   // left child page id
     size_t right;  // right child page id
-    char padding[4064]; // 4096 - 4 - 1 - 3 - 8 - 8 - 8 = 4064
+    // Calculate padding to ensure struct is exactly 4096 bytes
+    char padding[4096 - sizeof(int) - sizeof(Color) - 3 - 3 * sizeof(size_t)];
 };
 
 static_assert(sizeof(RBNode) <= 4096, "RBNode must fit in a page");
@@ -247,10 +248,12 @@ private:
         RBNode node;
         m_pager.readPage(pageId, node);
         
+        // Evict LRU if at capacity before adding new node
         if (m_cache.size() >= RBNodeCache::CAPACITY) {
             auto [tailId, tailNode] = m_cache.tail();
             if (tailNode != nullptr) {
                 m_pager.writePage(tailId, *tailNode);
+                m_cache.remove(tailId);
             }
         }
         
@@ -264,10 +267,12 @@ private:
         if (m_cache.contains(pageId)) {
             m_cache.put(pageId, cached);
         } else {
+            // Evict LRU if at capacity before adding new node
             if (m_cache.size() >= RBNodeCache::CAPACITY) {
                 auto [tailId, tailNode] = m_cache.tail();
                 if (tailNode != nullptr) {
                     m_pager.writePage(tailId, *tailNode);
+                    m_cache.remove(tailId);
                 }
             }
             m_cache.put(pageId, cached);
