@@ -2,7 +2,7 @@
 
 ## Summary
 
-BPLUS_SQL is a disk-based database engine implementation for storing and managing integers using a B+ tree data structure. This project was developed as part of the 2024 Data Structures and Algorithms Challenge Course Design (2024届数据结构与算法挑战班课程设计). The system features a complete SQL-like command parser, persistent storage through a custom paging system, an LRU cache for performance optimization, and comprehensive testing infrastructure including performance comparisons with Red-Black trees.
+BPLUS_SQL is a disk-based database engine implementation for storing and managing integers using a B+ tree data structure. This project was developed as part of the 2024 Data Structures and Algorithms Challenge Course Design. The system features a complete SQL-like command parser, persistent storage through a custom paging system, an LRU cache for performance optimization, and comprehensive testing infrastructure including performance comparisons with Red-Black trees.
 
 The project consists of approximately 1,967 lines of C++ code and implements core database operations (CREATE, INSERT, QUERY, ERASE, DESTROY) with full disk persistence, allowing databases to survive program restarts. The implementation uses modern C++23 features and has undergone extensive testing to ensure correctness and performance.
 
