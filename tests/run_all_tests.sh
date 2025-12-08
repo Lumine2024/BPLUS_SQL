@@ -66,6 +66,23 @@ run_test "test_existing_tree"
 [ -f data/test.bin ] && rm -f data/test.bin
 run_test "parse_commands"
 
+echo "Running test rb_tree"
+rb_tree_exe=$(find_exe rb_tree)
+if [ -z "$rb_tree_exe" ]; then
+	echo "rb_tree executable not found" >&2
+	exit 1
+fi
+
+if ! "$rb_tree_exe"; then
+	echo "Test rb_tree failed" >&2
+	exit 1
+fi
+echo "Test rb_tree passed"
+
+# remove test data if present
+[ -f data/test.bin ] && rm -f data/test.bin
+[ -f data/_test_for_rb_tree.bin ] && rm -f data/_test_for_rb_tree.bin
+
 echo "Running test main"
 # generate commands and bf expected result using C++ helpers
 gentest_exe=$(find_exe gentest)
@@ -85,7 +102,7 @@ if [ -z "$test_bf_exe" ]; then
 	exit 1
 fi
 
-if ! cat tests/test_cmd.sql | "$test_bf_exe" > tests/test_result_bf.txt; then
+if ! "$test_bf_exe" tests/test_cmd.sql > tests/test_result_bf.txt; then
 	echo "test_bf failed" >&2
 	exit 1
 fi
@@ -97,7 +114,7 @@ if [ -z "$main_exe" ]; then
 fi
 
 # Run main with the generated commands and capture output
-if ! cat tests/test_cmd.sql | "$main_exe" > tests/test_result_bplus.txt; then
+if ! "$main_exe" tests/test_cmd.sql > tests/test_result_bplus.txt; then
 	echo "Test main failed: Runtime error" >&2
 	exit 1
 fi

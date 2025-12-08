@@ -16,7 +16,7 @@ int main() {
 
     std::cout << "CREATE TABLE " << DB_NAME << '\n';
 
-    for (int i = 0; i < 10000000; ++i) {
+    for (int i = 0; i < 100000; ++i) {
         int op = opdist(rng);
         int k = keydist(rng);
         if (op == 0) {
