@@ -2,7 +2,13 @@
 #include <iostream>
 #include <string>
 
+char buffer[1 << 24];
+
 int main() {
+    std::ios_base::sync_with_stdio(false);
+    std::cin.tie(nullptr);
+    std::cout.rdbuf()->pubsetbuf(buffer, 1 << 24);
+
     std::mt19937 rng(42);
     std::uniform_int_distribution<int> opdist(0, 2);
     std::uniform_int_distribution<int> keydist(1, 100000);
