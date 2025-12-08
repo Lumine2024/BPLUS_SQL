@@ -33,6 +33,8 @@ class RBNodeCache {
 public:
     static constexpr size_t CAPACITY = 1024;
     
+    RBNodeCache(bplus_sql::Pager* pager) : m_pager(pager) {}
+    
     std::shared_ptr<RBNode> get(size_t pageId) {
         auto it = m_cache.find(pageId);
         if (it == m_cache.end()) {
@@ -57,7 +59,7 @@ public:
             return;
         }
         
-        // Add new entry
+        // Add new entry - evict if at capacity
         if (m_cache.size() >= CAPACITY) {
             evictLRU();
         }
@@ -82,14 +84,6 @@ public:
         return m_cache.size();
     }
     
-    std::pair<size_t, std::shared_ptr<RBNode>> tail() const {
-        if (m_list.empty()) {
-            return {0, nullptr};
-        }
-        size_t backId = m_list.back();
-        return {backId, m_cache.at(backId).first};
-    }
-    
     template<typename Func>
     void traverse(Func&& fn) {
         for(auto& [pageId, pair] : m_cache) {
@@ -102,10 +96,18 @@ private:
         if (!m_list.empty()) {
             size_t lru_page = m_list.back();
             m_list.pop_back();
-            m_cache.erase(lru_page);
+            auto it = m_cache.find(lru_page);
+            if (it != m_cache.end()) {
+                // Write to disk before evicting
+                if (m_pager) {
+                    m_pager->writePage(lru_page, *(it->second.first));
+                }
+                m_cache.erase(it);
+            }
         }
     }
     
+    bplus_sql::Pager* m_pager;
     std::list<size_t> m_list;
     std::unordered_map<size_t, std::pair<std::shared_ptr<RBNode>, std::list<size_t>::iterator>> m_cache;
 };
@@ -115,6 +117,7 @@ public:
     static constexpr size_t NIL = 0; // NIL node is at page 0
     
     RbTree() : m_pager((std::filesystem::path(__FILE__).parent_path().parent_path() / "data" / "_test_for_rb_tree.bin").string()),
+               m_cache(&m_pager),
                m_root(NIL), m_nextPageId(1) {
         // Initialize NIL node
         RBNode nilNode;
@@ -248,28 +251,11 @@ private:
         
         RBNode node;
         m_pager.readPage(pageId, node);
-        
-        // Evict LRU if at capacity before adding new node
-        if (m_cache.size() >= RBNodeCache::CAPACITY) {
-            auto [tailId, tailNode] = m_cache.tail();
-            if (tailNode != nullptr) {
-                m_pager.writePage(tailId, *tailNode);
-            }
-        }
-        
         m_cache.put(pageId, std::make_shared<RBNode>(node));
         return node;
     }
     
     void writeNode(size_t pageId, const RBNode& node) {
-        // Evict LRU if at capacity and this is a new node
-        if (!m_cache.contains(pageId) && m_cache.size() >= RBNodeCache::CAPACITY) {
-            auto [tailId, tailNode] = m_cache.tail();
-            if (tailNode != nullptr) {
-                m_pager.writePage(tailId, *tailNode);
-            }
-        }
-        
         m_cache.put(pageId, std::make_shared<RBNode>(node));
     }
     
