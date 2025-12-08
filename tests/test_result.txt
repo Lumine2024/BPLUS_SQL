@@ -1,0 +1,56 @@
+-- Building for: Ninja
+-- The C compiler identification is GNU 15.2.0
+-- The CXX compiler identification is GNU 15.2.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: C:/msys64/mingw64/bin/cc.exe - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: C:/msys64/mingw64/bin/c++.exe - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Configuring done (3.2s)
+-- Generating done (0.1s)
+-- Build files have been written to: D:/BPLUS_SQL/build
+[1/16] Building CXX object CMakeFiles/gentest.dir/tests/gentest.cpp.obj
+[2/16] Linking CXX executable gentest.exe
+[3/16] Building CXX object CMakeFiles/parse_commands.dir/tests/parse_commands.cpp.obj
+[4/16] Building CXX object CMakeFiles/test_bf.dir/tests/test_bf.cpp.obj
+[5/16] Linking CXX executable parse_commands.exe
+[6/16] Linking CXX executable test_bf.exe
+[7/16] Building CXX object CMakeFiles/test_existing_tree.dir/tests/test_existing_tree.cpp.obj
+[8/16] Building CXX object CMakeFiles/always_insert.dir/tests/always_insert.cpp.obj
+[9/16] Linking CXX executable test_existing_tree.exe
+[10/16] Building CXX object CMakeFiles/pressure_test.dir/tests/pressure_test.cpp.obj
+[11/16] Linking CXX executable always_insert.exe
+[12/16] Linking CXX executable pressure_test.exe
+[13/16] Building CXX object CMakeFiles/main.dir/src/main.cpp.obj
+[14/16] Building CXX object CMakeFiles/rb_tree.dir/tests/rb_tree.cpp.obj
+[15/16] Linking CXX executable main.exe
+[16/16] Linking CXX executable rb_tree.exe
+Running test pressure_test
+Test pressure_test passed
+Running test always_insert
+Test always_insert passed
+Running test test_existing_tree
+Test test_existing_tree passed
+Running test parse_commands
+Test parse_commands passed
+Running test main
+Test main passed
+Running test rb_tree
+Initializing trees and generating test operations...
+Running correctness validation...
+Correctness validation passed!
+Generating performance test operations...
+Running performance tests...
+
+=== Performance Results ===
+B+ Tree: 111 ms
+RB Tree: 11942 ms
+B+ tree is 107.586x faster than RB tree
+Test rb_tree passed
+
+All tests passed!

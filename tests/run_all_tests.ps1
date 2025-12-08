@@ -44,6 +44,11 @@ function RunTest([string]$TestName) {
     Write-Output "Test $TestName passed"
 }
 
+# Remove test data if present
+if (Test-Path data/test.bin) {
+    Remove-Item data/test.bin
+}
+
 RunTest "pressure_test"
 
 # Remove test data if present
@@ -61,29 +66,7 @@ if (Test-Path data/test.bin) {
 
 RunTest "parse_commands"
 
-Write-Output "Running test rb_tree"
-$rbTreeExe = Find-Executable "rb_tree"
-if ($null -eq $rbTreeExe) {
-    Write-Output "rb_tree executable not found"
-    exit 1
-}
-& $rbTreeExe
-if($LASTEXITCODE -ne 0) {
-    Write-Output "Test rb_tree failed"
-    exit 1
-}
-Write-Output "Test rb_tree passed"
-
-# Remove test data if present
-if (Test-Path data/test.bin) {
-    Remove-Item data/test.bin
-}
-if (Test-Path data/_test_for_rb_tree.bin) {
-    Remove-Item data/_test_for_rb_tree.bin
-}
-
 Write-Output "Running test main"
-# Use C++ helpers gentest and test_bf instead of Python
 $gentest = Find-Executable "gentest"
 if ($null -eq $gentest) {
     Write-Output "gentest executable not found"
@@ -123,5 +106,23 @@ if($f1 -ne $f2) {
     exit 1
 }
 Write-Output "Test main passed"
+
+# Remove test data if present
+if (Test-Path data/test.bin) {
+    Remove-Item data/test.bin
+}
+if (Test-Path data/_test_for_rb_tree.bin) {
+    Remove-Item data/_test_for_rb_tree.bin
+}
+
+RunTest "rb_tree"
+
+# Remove test data if present
+if (Test-Path data/test.bin) {
+    Remove-Item data/test.bin
+}
+if (Test-Path data/_test_for_rb_tree.bin) {
+    Remove-Item data/_test_for_rb_tree.bin
+}
 
 Write-Output "`nAll tests passed!"
