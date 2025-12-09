@@ -8,7 +8,7 @@ if (Test-Path "build") {
 }
 # build project
 cmake -S . -B build
-cmake --build build --config Debug
+cmake --build build --config Release
 if($LASTEXITCODE -ne 0) {
     Write-Output "Compile error"
     exit 1
