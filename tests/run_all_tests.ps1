@@ -3,7 +3,9 @@ $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location (Join-Path $scriptDir "..")
 
 # erase executables built before
-Remove-Item -LiteralPath 'D:\BPLUS_SQL\build' -Recurse -Force
+if (Test-Path "build") {
+    Remove-Item "build" -Recurse -Force
+}
 # build project
 cmake -S . -B build
 cmake --build build --config Debug
