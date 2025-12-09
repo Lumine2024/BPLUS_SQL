@@ -7,7 +7,7 @@ cd "$(dirname "$0")/.."
 
 # Build project
 cmake -S . -B build
-cmake --build build --config Debug
+cmake --build build --config Release
 
 # Find the executable produced by CMake. Handles MSVC (build/Debug/*.exe)
 # and Make/Ninja (build/<name>.exe) layouts. Returns empty string if not found.
