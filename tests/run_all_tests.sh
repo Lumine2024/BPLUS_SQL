@@ -5,6 +5,11 @@ set -euo pipefail
 # Move to project root (script is in tests/)
 cd "$(dirname "$0")/.."
 
+# Erase executables built before
+if [ -d "build" ]; then
+	rm -rf build
+fi
+
 # Build project
 cmake -S . -B build
 cmake --build build --config Release
