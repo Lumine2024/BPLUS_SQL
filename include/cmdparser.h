@@ -41,6 +41,10 @@ public:
 	CmdParser() = delete;
 	// we assert that the line is valid
 	static Command parse(std::string line) {
+		// strip UTF-8 BOM if present (prevents first token being garbled)
+		if (line.size() >= 3 && (unsigned char)line[0] == 0xEF && (unsigned char)line[1] == 0xBB && (unsigned char)line[2] == 0xBF) {
+			line = line.substr(3);
+		}
 		std::stringstream ss(line);
 		Command result;
 		if(!(ss >> line)) return Command{INVALID, {}};

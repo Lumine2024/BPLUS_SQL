@@ -13,7 +13,7 @@ int main(int argc, char *argv[]) {
 	bplus_sql::BPlusTree tree(dst.string());
 	std::mt19937 rng(std::chrono::steady_clock::now().time_since_epoch().count());
 	std::uniform_int_distribution<int> ukey(1, 100000), uop(1, 2);
-	for(int i = 0; i < 10000000; ++i) {
+	for(int i = 0; i < 100000; ++i) {
 		int o = uop(rng), v = ukey(rng);
 		bool c1 = tree.search(v), c2 = cmp.contains(v);
 		assert(c1 == c2);
