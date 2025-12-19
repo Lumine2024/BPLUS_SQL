@@ -17,10 +17,38 @@ cmake --build build --config Release
 # and Make/Ninja (build/<name>.exe) layouts. Returns empty string if not found.
 find_exe() {
 	local name="$1"
+	# Check src subdirectory for main executable
+	if [ -f "build/src/${name}.exe" ]; then
+		printf '%s' "build/src/${name}.exe"
+		return
+	fi
+	if [ -f "build/src/${name}" ]; then
+		printf '%s' "build/src/${name}"
+		return
+	fi
+	# Check tests subdirectory for test executables
+	if [ -f "build/tests/${name}.exe" ]; then
+		printf '%s' "build/tests/${name}.exe"
+		return
+	fi
+	if [ -f "build/tests/${name}" ]; then
+		printf '%s' "build/tests/${name}"
+		return
+	fi
+	# Check Debug subdirectory (MSVC)
 	if [ -f "build/Debug/${name}.exe" ]; then
 		printf '%s' "build/Debug/${name}.exe"
 		return
 	fi
+	if [ -f "build/src/Debug/${name}.exe" ]; then
+		printf '%s' "build/src/Debug/${name}.exe"
+		return
+	fi
+	if [ -f "build/tests/Debug/${name}.exe" ]; then
+		printf '%s' "build/tests/Debug/${name}.exe"
+		return
+	fi
+	# Legacy paths (backwards compatibility)
 	if [ -f "build/${name}.exe" ]; then
 		printf '%s' "build/${name}.exe"
 		return
