@@ -40,12 +40,24 @@ find_exe() {
 		printf '%s' "build/Debug/${name}.exe"
 		return
 	fi
+	if [ -f "build/Debug/${name}" ]; then
+		printf '%s' "build/Debug/${name}"
+		return
+	fi
 	if [ -f "build/src/Debug/${name}.exe" ]; then
 		printf '%s' "build/src/Debug/${name}.exe"
 		return
 	fi
+	if [ -f "build/src/Debug/${name}" ]; then
+		printf '%s' "build/src/Debug/${name}"
+		return
+	fi
 	if [ -f "build/tests/Debug/${name}.exe" ]; then
 		printf '%s' "build/tests/Debug/${name}.exe"
+		return
+	fi
+	if [ -f "build/tests/Debug/${name}" ]; then
+		printf '%s' "build/tests/Debug/${name}"
 		return
 	fi
 	# Legacy paths (backwards compatibility)
