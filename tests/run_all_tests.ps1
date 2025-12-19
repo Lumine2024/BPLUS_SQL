@@ -17,9 +17,13 @@ if($LASTEXITCODE -ne 0) {
 # run tests
 function Find-Executable([string]$Name) {
     $locations = @(
-        "./build/Debug/$Name.exe",
-        "./build/$Name.exe",
-        "./build/$Name"
+        # "./build/Debug/$Name.exe",
+        # "./build/$Name.exe",
+        # "./build/$Name",
+        "./build/src/$Name.exe",
+        "./build/tests/$Name.exe",
+        "./build/src/$Name",
+        "./build/tests/$Name"
     )
     
     foreach ($path in $locations) {
