@@ -1,11 +1,11 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.16)
 project(bplus_sql)
 
 set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Set global include directories for all targets
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
+enable_testing()
 
-# Add subdirectories
 add_subdirectory(src)
 add_subdirectory(tests)
